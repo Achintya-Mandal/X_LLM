@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nano GPT</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #7c3aed, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    header p {
+      color: #94a3b8;
+      margin-top: 6px;
+      font-size: 0.9rem;
+    }
+
+    /* Model info pills */
+    #model-info {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 32px;
+    }
+    .pill {
+      background: #1e2333;
+      border: 1px solid #2d3748;
+      border-radius: 999px;
+      padding: 4px 14px;
+      font-size: 0.78rem;
+      color: #94a3b8;
+    }
+    .pill span { color: #a78bfa; font-weight: 600; }
+
+    /* Main card */
+    .card {
+      background: #1a1f2e;
+      border: 1px solid #2d3748;
+      border-radius: 16px;
+      padding: 28px;
+      width: 100%;
+      max-width: 760px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 100px;
+      background: #0f1117;
+      border: 1px solid #2d3748;
+      border-radius: 10px;
+      color: #e2e8f0;
+      font-size: 1rem;
+      padding: 12px 14px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+    textarea:focus { border-color: #7c3aed; }
+    textarea::placeholder { color: #4a5568; }
+
+    /* Controls grid */
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    @media (max-width: 560px) { .controls { grid-template-columns: 1fr; } }
+
+    .control-group { display: flex; flex-direction: column; gap: 8px; }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    input[type=range] {
+      flex: 1;
+      accent-color: #7c3aed;
+      cursor: pointer;
+    }
+    .val-badge {
+      min-width: 42px;
+      text-align: right;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: #a78bfa;
+    }
+
+    .hint {
+      font-size: 0.73rem;
+      color: #4a5568;
+      margin-top: 2px;
+    }
+
+    /* Generate button */
+    .btn {
+      margin-top: 24px;
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #7c3aed, #3b82f6);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .btn:hover:not(:disabled) { opacity: 0.9; }
+    .btn:active:not(:disabled) { transform: scale(0.99); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Output */
+    #output-section {
+      margin-top: 28px;
+      display: none;
+    }
+    #output-section label { margin-bottom: 10px; }
+
+    #output-box {
+      background: #0f1117;
+      border: 1px solid #2d3748;
+      border-radius: 10px;
+      padding: 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.92rem;
+      line-height: 1.7;
+      color: #e2e8f0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 360px;
+      overflow-y: auto;
+    }
+
+    /* Prompt part highlighted */
+    .prompt-text { color: #7c3aed; font-weight: 600; }
+    .generated-text { color: #e2e8f0; }
+
+    /* Error */
+    #error-box {
+      display: none;
+      margin-top: 16px;
+      background: #2d1515;
+      border: 1px solid #7f1d1d;
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: #fca5a5;
+      font-size: 0.88rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Nano GPT</h1>
+    <p>Character-level language model trained on Shakespeare</p>
+  </header>
+
+  <div id="model-info">
+    <div class="pill">Parameters: <span id="info-params">—</span></div>
+    <div class="pill">Vocabulary: <span id="info-vocab">—</span> chars</div>
+    <div class="pill">Device: <span id="info-device">—</span></div>
+    <div class="pill">Context: <span id="info-block">—</span> tokens</div>
+  </div>
+
+  <div class="card">
+    <label for="prompt">Prompt</label>
+    <textarea id="prompt" placeholder="To be or not to be (leave empty for unconditional generation)"></textarea>
+
+    <div class="controls">
+      <div class="control-group">
+        <label for="max-tokens">Max tokens</label>
+        <div class="slider-row">
+          <input type="range" id="max-tokens" min="50" max="1000" step="50" value="200" />
+          <span class="val-badge" id="max-tokens-val">200</span>
+        </div>
+        <div class="hint">Characters to generate</div>
+      </div>
+
+      <div class="control-group">
+        <label for="temperature">Temperature</label>
+        <div class="slider-row">
+          <input type="range" id="temperature" min="0.1" max="2.0" step="0.1" value="0.8" />
+          <span class="val-badge" id="temperature-val">0.8</span>
+        </div>
+        <div class="hint">Low = focused · High = creative</div>
+      </div>
+
+      <div class="control-group">
+        <label for="top-k">Top-K</label>
+        <div class="slider-row">
+          <input type="range" id="top-k" min="1" max="100" step="1" value="40" />
+          <span class="val-badge" id="top-k-val">40</span>
+        </div>
+        <div class="hint">Sample from top-K candidates</div>
+      </div>
+    </div>
+
+    <button class="btn" id="generate-btn">
+      <div class="spinner" id="spinner"></div>
+      <span id="btn-label">Generate</span>
+    </button>
+
+    <div id="error-box"></div>
+
+    <div id="output-section">
+      <label>Output</label>
+      <div id="output-box"></div>
+    </div>
+  </div>
+
+  <script>
+    // --- Bind sliders to their value badges ---
+    const sliders = [
+      { slider: 'max-tokens',  badge: 'max-tokens-val'  },
+      { slider: 'temperature', badge: 'temperature-val' },
+      { slider: 'top-k',       badge: 'top-k-val'       },
+    ];
+    sliders.forEach(({ slider, badge }) => {
+      const el = document.getElementById(slider);
+      const bel = document.getElementById(badge);
+      el.addEventListener('input', () => bel.textContent = el.value);
+    });
+
+    // --- Fetch model info on load ---
+    async function loadModelInfo() {
+      try {
+        const res  = await fetch('/health');
+        const data = await res.json();
+        document.getElementById('info-params').textContent = data.parameters.toLocaleString();
+        document.getElementById('info-vocab').textContent  = data.vocab_size;
+        document.getElementById('info-device').textContent = data.device;
+        document.getElementById('info-block').textContent  = data.block_size;
+      } catch {
+        // server not ready yet — silently skip
+      }
+    }
+    loadModelInfo();
+
+    // --- Generate ---
+    document.getElementById('generate-btn').addEventListener('click', async () => {
+      const btn     = document.getElementById('generate-btn');
+      const spinner = document.getElementById('spinner');
+      const label   = document.getElementById('btn-label');
+      const errBox  = document.getElementById('error-box');
+      const outSec  = document.getElementById('output-section');
+      const outBox  = document.getElementById('output-box');
+
+      const prompt      = document.getElementById('prompt').value;
+      const max_tokens  = parseInt(document.getElementById('max-tokens').value);
+      const temperature = parseFloat(document.getElementById('temperature').value);
+      const top_k       = parseInt(document.getElementById('top-k').value);
+
+      // Loading state
+      btn.disabled      = true;
+      spinner.style.display = 'block';
+      label.textContent = 'Generating…';
+      errBox.style.display  = 'none';
+      outSec.style.display  = 'none';
+
+      try {
+        const res = await fetch('/generate', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ prompt, max_tokens, temperature, top_k }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail ?? `HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        // Highlight the prompt portion in purple, generated text in white
+        outBox.innerHTML =
+          (prompt
+            ? `<span class="prompt-text">${escapeHtml(prompt)}</span>`
+            : '') +
+          `<span class="generated-text">${escapeHtml(data.text.slice(prompt.length))}</span>`;
+
+        outSec.style.display = 'block';
+
+      } catch (err) {
+        errBox.textContent   = `Error: ${err.message}`;
+        errBox.style.display = 'block';
+      } finally {
+        btn.disabled          = false;
+        spinner.style.display = 'none';
+        label.textContent     = 'Generate';
+      }
+    });
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+# Virtual environment
+.venv/
+
+# Trained artifacts (large binary files)
+model.pt
+tokenizer.pkl
+
+# Data
+data/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Claude
+.claude/
