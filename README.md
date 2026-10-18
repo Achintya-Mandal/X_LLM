@@ -88,7 +88,13 @@ pip install fastapi uvicorn
 python train.py
 ```
 
-Downloads ~1 MB of Shakespeare, trains for 5000 steps, saves `model.pt` and `tokenizer.pkl`.
+On first run, the script automatically downloads the **Tiny Shakespeare** dataset (~1 MB) from:
+
+> [karpathy/char-rnn — tinyshakespeare/input.txt](https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt)
+
+This is a single plain-text file containing 40,000 lines of Shakespeare's plays — roughly 1.1 million characters. It is **not stored in this repo** (see `.gitignore`); it is fetched once and saved to `data/shakespeare.txt`.
+
+Trains for 5000 steps, saves `model.pt` and `tokenizer.pkl`.
 
 Expected output:
 
