@@ -1,6 +1,8 @@
-# X_LLM — Nano GPT from Scratch
+# X_LLM — Build an LLM from Scratch
 
-A minimal character-level GPT built from scratch in PyTorch to understand how large language models actually work — tokenization, self-attention, transformer blocks, training loops, and text generation.
+A hands-on learning project that builds a GPT language model from the ground up using PyTorch — no libraries that hide the internals, no pre-built transformer modules.
+
+Every file is written to be **read and understood**, not just run. The goal is to see exactly how each piece of a real LLM works: how text becomes numbers, how attention lets tokens talk to each other, how the network learns from its own mistakes, and how you sample coherent text from a probability distribution.
 
 ~207k parameters. Trains on Shakespeare in ~5 minutes on CPU.
 
